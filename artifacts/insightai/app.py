@@ -160,7 +160,10 @@ def login():
             login_user(user, remember=True)
             next_page = request.args.get("next")
             flash(f"Welcome back, {user.username}!", "success")
-            return redirect(next_page or url_for("dashboard"))
+            # Validate next_page to prevent open-redirect attacks
+            if next_page and next_page.startswith("/") and not next_page.startswith("//"):
+                return redirect(next_page)
+            return redirect(url_for("dashboard"))
         flash("Invalid email or password.", "danger")
     return render_template("login.html")
 

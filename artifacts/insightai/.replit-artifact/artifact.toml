@@ -1,0 +1,18 @@
+kind = "web"
+previewPath = "/"
+title = "InsightAI"
+version = "1.0.0"
+id = "artifacts/insightai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18287
+
+[services.development]
+run = "cd /home/runner/workspace/artifacts/insightai && python app.py"
+
+[services.env]
+PORT = "18287"
+BASE_PATH = "/"
