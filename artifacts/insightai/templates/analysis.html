@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block title %}{{ a.title }}{% endblock %}
+{% block page_title %}AI Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-h1 text-truncate" style="max-width:540px">{{ a.title }}</h1>
+    <p class="page-sub">
+      <span class="badge-source me-2"><span class="material-icons-round" style="font-size:13px">{{ 'upload_file' if a.data_source == 'upload' else 'edit_note' }}</span> {{ a.data_source.capitalize() }}</span>
+      {{ a.row_count }} rows · {{ a.column_count }} columns · {{ a.created_at.strftime('%B %d, %Y') }}
+    </p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('download_report', analysis_id=a.id) }}" class="btn-outline-custom">
+      <span class="material-icons-round">picture_as_pdf</span> Download Report
+    </a>
+    <a href="{{ url_for('history') }}" class="btn-outline-custom">
+      <span class="material-icons-round">arrow_back</span> Back
+    </a>
+  </div>
+</div>
+
+<!-- Score strip -->
+<div class="score-strip">
+  <div class="score-item">
+    <div class="score-label">Risk Level</div>
+    <div class="score-value">
+      <span class="badge-risk badge-{{ a.risk_badge_class() }} badge-lg">{{ a.risk_level }}</span>
+    </div>
+  </div>
+  <div class="score-divider"></div>
+  <div class="score-item">
+    <div class="score-label">Confidence Score</div>
+    <div class="score-value text-blue fw-bold" style="font-size:1.5rem">{{ "%.0f"|format((a.confidence_score or 0) * 100) }}%</div>
+  </div>
+  <div class="score-divider"></div>
+  <div class="score-item">
+    <div class="score-label">Decision Score</div>
+    <div class="score-value">
+      <span style="font-size:1.5rem;font-weight:700;color:#1976D2">{{ "%.1f"|format(a.decision_score or 0) }}</span>
+      <span class="text-muted">/100</span>
+    </div>
+  </div>
+  <div class="score-divider"></div>
+  <div class="score-item">
+    <div class="score-label">Anomalies Found</div>
+    <div class="score-value fw-bold" style="font-size:1.5rem;color:{% if a.get_anomalies()|length > 3 %}#f44336{% else %}#4CAF50{% endif %}">
+      {{ a.get_anomalies()|length }}
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <!-- Left column -->
+  <div class="col-lg-7">
+    <!-- Executive Summary -->
+    <div class="card-panel">
+      <div class="card-panel-header"><span class="material-icons-round">summarize</span> Executive Summary</div>
+      <p class="analysis-body">{{ a.executive_summary or 'No summary available.' }}</p>
+    </div>
+
+    <!-- Key Trends -->
+    <div class="card-panel mt-4">
+      <div class="card-panel-header"><span class="material-icons-round">trending_up</span> Key Trends</div>
+      <ul class="insight-list">
+        {% for trend in a.get_key_trends() %}
+        <li class="insight-item insight-blue">
+          <span class="material-icons-round">arrow_forward</span>
+          {{ trend }}
+        </li>
+        {% else %}
+        <li class="text-muted">No trends detected.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Risk Details -->
+    <div class="card-panel mt-4">
+      <div class="card-panel-header">
+        <span class="material-icons-round">shield</span> Risk Assessment
+        <span class="badge-risk badge-{{ a.risk_badge_class() }} ms-2">{{ a.risk_level }}</span>
+      </div>
+      <p class="analysis-body">{{ a.risk_details or 'No risk details available.' }}</p>
+      {% if a.get_anomalies() %}
+      <div class="anomaly-table-wrap">
+        <div class="small fw-600 mb-2 text-muted">Detected Anomalies</div>
+        <div class="table-responsive">
+          <table class="table insight-table mb-0">
+            <thead>
+              <tr><th>Row</th><th>Column</th><th>Severity</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              {% for anm in a.get_anomalies() %}
+              <tr>
+                <td>{{ anm.row }}</td>
+                <td><code>{{ anm.column }}</code></td>
+                <td><span class="badge-risk badge-{{ {'High':'danger','Medium':'warning','Low':'success','Critical':'danger'}.get(anm.severity,'secondary') }}">{{ anm.severity }}</span></td>
+                <td class="small text-muted">{{ anm.description }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Opportunities -->
+    <div class="card-panel mt-4">
+      <div class="card-panel-header"><span class="material-icons-round">lightbulb</span> Opportunities</div>
+      <ul class="insight-list">
+        {% for opp in a.get_opportunities() %}
+        <li class="insight-item insight-green">
+          <span class="material-icons-round">arrow_forward</span>
+          {{ opp }}
+        </li>
+        {% else %}
+        <li class="text-muted">No opportunities detected.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Recommended Actions -->
+    <div class="card-panel mt-4">
+      <div class="card-panel-header"><span class="material-icons-round">task_alt</span> Recommended Actions</div>
+      <div class="action-list">
+        {% for act in a.get_recommended_actions() %}
+        <div class="action-item priority-{{ act.priority|lower }}">
+          <div class="action-header">
+            <span class="action-priority">{{ act.priority }}</span>
+            <span class="action-impact">{{ act.impact }}</span>
+          </div>
+          <p class="action-text">{{ act.action }}</p>
+        </div>
+        {% else %}
+        <p class="text-muted">No actions recommended.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Predictions -->
+    {% if a.get_predictions() %}
+    <div class="card-panel mt-4">
+      <div class="card-panel-header"><span class="material-icons-round">science</span> Predictive Insights</div>
+      <div class="prediction-grid">
+        {% for pred in a.get_predictions() %}
+        <div class="prediction-card">
+          <div class="pred-metric">{{ pred.metric }}</div>
+          <div class="pred-direction {% if pred.direction == 'increase' %}dir-up{% elif pred.direction == 'decrease' %}dir-down{% else %}dir-stable{% endif %}">
+            <span class="material-icons-round">
+              {% if pred.direction == 'increase' %}trending_up{% elif pred.direction == 'decrease' %}trending_down{% else %}trending_flat{% endif %}
+            </span>
+            {{ pred.direction|capitalize }}
+          </div>
+          <div class="pred-details">
+            <span>{{ pred.magnitude }}</span> · <span>{{ pred.timeframe }}</span>
+          </div>
+          <div class="pred-conf">Confidence: {{ pred.confidence }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right column: Charts -->
+  <div class="col-lg-5">
+    <div class="card-panel sticky-charts">
+      <div class="card-panel-header"><span class="material-icons-round">bar_chart</span> Data Visualizations</div>
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="switchChart('bar', this)">Bar</button>
+        <button class="chart-tab" onclick="switchChart('line', this)">Line</button>
+        <button class="chart-tab" onclick="switchChart('pie', this)">Pie</button>
+        <button class="chart-tab" onclick="switchChart('scatter', this)">Scatter</button>
+      </div>
+      <div class="chart-container-lg">
+        <canvas id="barChart" class="chart-canvas"></canvas>
+        <canvas id="lineChart" class="chart-canvas d-none"></canvas>
+        <canvas id="pieChart" class="chart-canvas d-none"></canvas>
+        <canvas id="scatterChart" class="chart-canvas d-none"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CHART_COLORS = ['#1976D2','#388E3C','#F57C00','#7B1FA2','#00695C','#C62828','#0288D1','#558B2F'];
+let charts = {};
+
+async function loadCharts() {
+  try {
+    const res = await fetch('/api/analysis/{{ a.id }}/chart-data');
+    const data = await res.json();
+
+    if (data.bar) {
+      charts.bar = new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels: data.bar.labels,
+          datasets: data.bar.datasets.map((d, i) => ({
+            ...d, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + 'CC',
+            borderColor: CHART_COLORS[i % CHART_COLORS.length], borderWidth: 1, borderRadius: 6
+          }))
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          scales: { y: { grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
+      });
+    }
+    if (data.line) {
+      charts.line = new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: {
+          labels: data.line.labels,
+          datasets: data.line.datasets.map((d, i) => ({
+            ...d, borderColor: CHART_COLORS[i % CHART_COLORS.length],
+            backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '18',
+            fill: true, tension: 0.4, pointRadius: 4
+          }))
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+          scales: { y: { grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
+      });
+    }
+    if (data.pie) {
+      charts.pie = new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: { labels: data.pie.labels, datasets: [{ data: data.pie.datasets[0].data,
+          backgroundColor: CHART_COLORS, borderWidth: 0, hoverOffset: 8 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+          plugins: { legend: { position: 'bottom', labels: { padding: 16 } } } }
+      });
+    }
+    if (data.scatter) {
+      charts.scatter = new Chart(document.getElementById('scatterChart'), {
+        type: 'scatter',
+        data: { datasets: data.scatter.datasets.map((d, i) => ({
+          ...d, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '99',
+          pointRadius: 6
+        })) },
+        options: { responsive: true, maintainAspectRatio: false,
+          scales: { x: { grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { color: 'rgba(0,0,0,0.05)' } } } }
+      });
+    }
+  } catch(e) { console.error('Chart load error', e); }
+}
+
+function switchChart(type, btn) {
+  document.querySelectorAll('.chart-canvas').forEach(c => c.classList.add('d-none'));
+  document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
+  const canvas = document.getElementById(type + 'Chart');
+  if (canvas) canvas.classList.remove('d-none');
+  btn.classList.add('active');
+}
+
+loadCharts();
+</script>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-h1">Welcome back, {{ current_user.username }} 👋</h1>
+    <p class="page-sub">Here's an overview of your AI analyses.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('upload') }}" class="btn-primary-custom">
+      <span class="material-icons-round">upload_file</span> Upload Data
+    </a>
+    <a href="{{ url_for('manual_entry') }}" class="btn-outline-custom">
+      <span class="material-icons-round">edit_note</span> Manual Entry
+    </a>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card kpi-blue">
+    <div class="kpi-icon"><span class="material-icons-round">analytics</span></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ total }}</div>
+      <div class="kpi-label">Total Analyses</div>
+    </div>
+    <div class="kpi-bg-icon"><span class="material-icons-round">analytics</span></div>
+  </div>
+  <div class="kpi-card kpi-green">
+    <div class="kpi-icon"><span class="material-icons-round">lightbulb</span></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ insights }}</div>
+      <div class="kpi-label">AI Insights Generated</div>
+    </div>
+    <div class="kpi-bg-icon"><span class="material-icons-round">lightbulb</span></div>
+  </div>
+  <div class="kpi-card kpi-red">
+    <div class="kpi-icon"><span class="material-icons-round">warning</span></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ high_risk }}</div>
+      <div class="kpi-label">High Risk Alerts</div>
+    </div>
+    <div class="kpi-bg-icon"><span class="material-icons-round">warning</span></div>
+  </div>
+  <div class="kpi-card kpi-purple">
+    <div class="kpi-icon"><span class="material-icons-round">task_alt</span></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ recommendations }}</div>
+      <div class="kpi-label">Smart Recommendations</div>
+    </div>
+    <div class="kpi-bg-icon"><span class="material-icons-round">task_alt</span></div>
+  </div>
+  <div class="kpi-card kpi-teal">
+    <div class="kpi-icon"><span class="material-icons-round">speed</span></div>
+    <div class="kpi-body">
+      <div class="kpi-value">{{ avg_decision }}<span style="font-size:1rem">/100</span></div>
+      <div class="kpi-label">Avg Decision Score</div>
+    </div>
+    <div class="kpi-bg-icon"><span class="material-icons-round">speed</span></div>
+  </div>
+</div>
+
+<!-- Charts + Recent row -->
+<div class="row g-4 mt-1">
+  {% if total > 0 %}
+  <div class="col-lg-5">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <span class="material-icons-round">pie_chart</span>
+        Risk Distribution
+      </div>
+      <div class="chart-container-sm">
+        <canvas id="riskChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <span class="material-icons-round">show_chart</span>
+        Decision Scores Over Time
+      </div>
+      <div class="chart-container-sm">
+        <canvas id="scoreChart"></canvas>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-12">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <span class="material-icons-round">history</span>
+        Recent Analyses
+        <a href="{{ url_for('history') }}" class="ms-auto link-blue small">View All →</a>
+      </div>
+      {% if recent %}
+      <div class="table-responsive">
+        <table class="table insight-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Source</th>
+              <th>Rows</th>
+              <th>Risk</th>
+              <th>Decision Score</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in recent %}
+            <tr>
+              <td><a href="{{ url_for('analysis', analysis_id=a.id) }}" class="link-title">{{ a.title }}</a></td>
+              <td>
+                <span class="badge-source">
+                  <span class="material-icons-round" style="font-size:13px">{{ 'upload_file' if a.data_source == 'upload' else 'edit_note' }}</span>
+                  {{ a.data_source.capitalize() }}
+                </span>
+              </td>
+              <td>{{ a.row_count|default(0)|int }}</td>
+              <td><span class="badge-risk badge-{{ a.risk_badge_class() }}">{{ a.risk_level }}</span></td>
+              <td>
+                <div class="score-bar-wrap">
+                  <div class="score-bar" style="width:{{ a.decision_score or 0 }}%"></div>
+                </div>
+                <small>{{ "%.1f"|format(a.decision_score or 0) }}</small>
+              </td>
+              <td class="text-muted small">{{ a.created_at.strftime('%b %d, %Y') }}</td>
+              <td><a href="{{ url_for('analysis', analysis_id=a.id) }}" class="btn-sm-view">View</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <span class="material-icons-round empty-icon">insights</span>
+        <h3>No analyses yet</h3>
+        <p>Upload a dataset or enter data manually to run your first AI analysis.</p>
+        <a href="{{ url_for('upload') }}" class="btn-primary-custom">
+          <span class="material-icons-round">upload_file</span> Upload Your First Dataset
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch('/api/dashboard-stats');
+    const data = await res.json();
+    if (data.total === 0) return;
+
+    // Risk pie
+    const riskCtx = document.getElementById('riskChart');
+    if (riskCtx) {
+      new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(data.risk_distribution),
+          datasets: [{
+            data: Object.values(data.risk_distribution),
+            backgroundColor: ['#4CAF50','#FF9800','#f44336','#B71C1C'],
+            borderWidth: 0,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter' } } } },
+          cutout: '65%'
+        }
+      });
+    }
+
+    // Score line
+    const scoreCtx = document.getElementById('scoreChart');
+    if (scoreCtx && data.decision_scores.length) {
+      new Chart(scoreCtx, {
+        type: 'line',
+        data: {
+          labels: data.dates.slice(-data.decision_scores.length),
+          datasets: [{
+            label: 'Decision Score',
+            data: data.decision_scores,
+            borderColor: '#1976D2',
+            backgroundColor: 'rgba(25,118,210,0.08)',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#1976D2',
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+  } catch(e) { console.error(e); }
+});
+</script>
+{% endblock %}

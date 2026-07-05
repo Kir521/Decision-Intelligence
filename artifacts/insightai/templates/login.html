@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block public_content %}
+<div class="auth-wrapper">
+  <div class="auth-left">
+    <div class="auth-brand">
+      <span class="material-icons-round">analytics</span>
+      <span>InsightAI</span>
+    </div>
+    <div class="auth-tagline">
+      <h2>Welcome back.</h2>
+      <p>Your AI-powered decision intelligence platform awaits.</p>
+    </div>
+    <div class="auth-features">
+      <div class="af-item"><span class="material-icons-round">check_circle</span> AI trend & risk detection</div>
+      <div class="af-item"><span class="material-icons-round">check_circle</span> Interactive charts & dashboards</div>
+      <div class="af-item"><span class="material-icons-round">check_circle</span> PDF report generation</div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-card">
+      <h1 class="auth-title">Sign In</h1>
+      <p class="auth-subtitle">Enter your credentials to access your dashboard.</p>
+      <form method="POST" action="{{ url_for('login') }}" class="auth-form">
+        <div class="form-group-custom">
+          <label>Email Address</label>
+          <div class="input-icon-wrap">
+            <span class="material-icons-round input-icon">email</span>
+            <input type="email" name="email" class="form-control custom-input" placeholder="you@example.com" required autofocus>
+          </div>
+        </div>
+        <div class="form-group-custom">
+          <label>Password</label>
+          <div class="input-icon-wrap">
+            <span class="material-icons-round input-icon">lock</span>
+            <input type="password" name="password" class="form-control custom-input" placeholder="••••••••" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-auth-primary">
+          <span class="material-icons-round">login</span>
+          Sign In
+        </button>
+      </form>
+      <p class="auth-switch">Don't have an account? <a href="{{ url_for('register') }}">Create one free</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

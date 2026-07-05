@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Create Account{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block public_content %}
+<div class="auth-wrapper">
+  <div class="auth-left">
+    <div class="auth-brand">
+      <span class="material-icons-round">analytics</span>
+      <span>InsightAI</span>
+    </div>
+    <div class="auth-tagline">
+      <h2>Start making smarter decisions.</h2>
+      <p>Create your free account and run your first AI analysis in under a minute.</p>
+    </div>
+    <div class="auth-features">
+      <div class="af-item"><span class="material-icons-round">check_circle</span> Free to get started</div>
+      <div class="af-item"><span class="material-icons-round">check_circle</span> No credit card required</div>
+      <div class="af-item"><span class="material-icons-round">check_circle</span> Powered by Google Gemini AI</div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-card">
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Join InsightAI and unlock AI-powered decision intelligence.</p>
+      <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+        <div class="form-group-custom">
+          <label>Username</label>
+          <div class="input-icon-wrap">
+            <span class="material-icons-round input-icon">person</span>
+            <input type="text" name="username" class="form-control custom-input" placeholder="yourname" required autofocus minlength="3">
+          </div>
+        </div>
+        <div class="form-group-custom">
+          <label>Email Address</label>
+          <div class="input-icon-wrap">
+            <span class="material-icons-round input-icon">email</span>
+            <input type="email" name="email" class="form-control custom-input" placeholder="you@example.com" required>
+          </div>
+        </div>
+        <div class="form-group-custom">
+          <label>Password</label>
+          <div class="input-icon-wrap">
+            <span class="material-icons-round input-icon">lock</span>
+            <input type="password" name="password" class="form-control custom-input" placeholder="Min. 6 characters" required minlength="6">
+          </div>
+        </div>
+        <div class="form-group-custom">
+          <label>Confirm Password</label>
+          <div class="input-icon-wrap">
+            <span class="material-icons-round input-icon">lock_reset</span>
+            <input type="password" name="confirm_password" class="form-control custom-input" placeholder="Repeat password" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-auth-primary">
+          <span class="material-icons-round">person_add</span>
+          Create Account
+        </button>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

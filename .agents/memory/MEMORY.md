@@ -1,0 +1,1 @@
+- [InsightAI Flask setup](insightai-flask.md) — Python 3.11 + Flask app at artifacts/insightai/ on port 5000, workflow "InsightAI"

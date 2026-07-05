@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Upload Data{% endblock %}
+{% block page_title %}Upload Data{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-h1">Upload Dataset</h1>
+    <p class="page-sub">Upload a CSV or Excel file and let AI analyze it instantly.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card-panel">
+      <div class="card-panel-header"><span class="material-icons-round">upload_file</span> File Upload</div>
+      <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" id="uploadForm">
+        <div class="form-group-custom mb-4">
+          <label>Analysis Title <span class="text-muted">(optional)</span></label>
+          <div class="input-icon-wrap">
+            <span class="material-icons-round input-icon">title</span>
+            <input type="text" name="title" class="form-control custom-input" placeholder="e.g. Q3 Sales Report Analysis">
+          </div>
+        </div>
+        <div class="drop-zone" id="dropZone">
+          <input type="file" name="file" id="fileInput" accept=".csv,.xlsx,.xls" required class="drop-zone-input">
+          <div class="drop-zone-body" id="dropZoneBody">
+            <div class="drop-icon"><span class="material-icons-round">cloud_upload</span></div>
+            <div class="drop-label">Drag & drop your file here</div>
+            <div class="drop-sublabel">or click to browse</div>
+            <div class="drop-types">CSV · XLSX · XLS · Max 16 MB</div>
+          </div>
+        </div>
+        <div id="filePreview" class="file-preview d-none">
+          <span class="material-icons-round file-icon">description</span>
+          <div class="file-info">
+            <span class="file-name" id="fileName"></span>
+            <span class="file-size" id="fileSize"></span>
+          </div>
+          <button type="button" class="file-remove" onclick="clearFile()">
+            <span class="material-icons-round">close</span>
+          </button>
+        </div>
+        <button type="submit" class="btn-primary-custom w-100 mt-4" id="submitBtn">
+          <span class="material-icons-round">auto_awesome</span>
+          Analyze with AI
+        </button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card-panel h-auto">
+      <div class="card-panel-header"><span class="material-icons-round">info</span> What to expect</div>
+      <div class="info-list">
+        <div class="info-item">
+          <span class="material-icons-round info-icon text-blue">speed</span>
+          <div><strong>Fast Analysis</strong><p>AI processes your data in under 10 seconds.</p></div>
+        </div>
+        <div class="info-item">
+          <span class="material-icons-round info-icon text-green">psychology</span>
+          <div><strong>Smart Insights</strong><p>Gemini AI reads every row to detect trends, risks, and opportunities.</p></div>
+        </div>
+        <div class="info-item">
+          <span class="material-icons-round info-icon text-orange">bar_chart</span>
+          <div><strong>Auto Charts</strong><p>Bar, line, pie, and scatter charts generated automatically.</p></div>
+        </div>
+        <div class="info-item">
+          <span class="material-icons-round info-icon text-purple">picture_as_pdf</span>
+          <div><strong>PDF Report</strong><p>Download a professional report to share with your team.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-panel mt-4 h-auto">
+      <div class="card-panel-header"><span class="material-icons-round">table_chart</span> Supported Formats</div>
+      <div class="format-list">
+        <div class="format-item"><span class="badge-source">CSV</span> Comma-separated values</div>
+        <div class="format-item"><span class="badge-source">XLSX</span> Excel 2007+ workbook</div>
+        <div class="format-item"><span class="badge-source">XLS</span> Excel 97-2003 workbook</div>
+      </div>
+      <p class="small text-muted mt-3">Tip: Make sure row 1 contains column headers for best results.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay d-none" id="loadingOverlay">
+  <div class="loading-card">
+    <div class="ai-spinner"></div>
+    <h3>AI is analyzing your data…</h3>
+    <p>Detecting trends, risks, and opportunities</p>
+    <div class="loading-steps">
+      <div class="load-step active" id="ls1"><span class="material-icons-round">table_chart</span> Parsing dataset</div>
+      <div class="load-step" id="ls2"><span class="material-icons-round">analytics</span> Computing statistics</div>
+      <div class="load-step" id="ls3"><span class="material-icons-round">psychology</span> Generating AI insights</div>
+      <div class="load-step" id="ls4"><span class="material-icons-round">bar_chart</span> Building charts</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const dropZoneBody = document.getElementById('dropZoneBody');
+const filePreview = document.getElementById('filePreview');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; showFile(fileInput.files[0]); }
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) showFile(fileInput.files[0]); });
+
+function showFile(f) {
+  document.getElementById('fileName').textContent = f.name;
+  document.getElementById('fileSize').textContent = (f.size / 1024).toFixed(1) + ' KB';
+  dropZoneBody.classList.add('d-none');
+  filePreview.classList.remove('d-none');
+}
+function clearFile() {
+  fileInput.value = '';
+  dropZoneBody.classList.remove('d-none');
+  filePreview.classList.add('d-none');
+}
+
+document.getElementById('uploadForm').addEventListener('submit', e => {
+  if (!fileInput.files[0]) return;
+  document.getElementById('loadingOverlay').classList.remove('d-none');
+  document.getElementById('submitBtn').disabled = true;
+  let step = 1;
+  const steps = [null, 'ls1', 'ls2', 'ls3', 'ls4'];
+  const interval = setInterval(() => {
+    if (step < 4) {
+      document.getElementById(steps[step]).classList.remove('active');
+      step++;
+      document.getElementById(steps[step]).classList.add('active');
+    } else clearInterval(interval);
+  }, 1500);
+});
+</script>
+{% endblock %}

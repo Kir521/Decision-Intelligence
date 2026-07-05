@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Manual Data Entry{% endblock %}
+{% block page_title %}Manual Entry{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-h1">Manual Data Entry</h1>
+    <p class="page-sub">Enter data directly in the spreadsheet editor below.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card-panel">
+      <div class="card-panel-header">
+        <span class="material-icons-round">edit_note</span> Spreadsheet Editor
+        <div class="ms-auto d-flex gap-2">
+          <button onclick="addColumn()" class="btn-sm-action">
+            <span class="material-icons-round">add_box</span> Add Column
+          </button>
+          <button onclick="addRow()" class="btn-sm-action">
+            <span class="material-icons-round">add</span> Add Row
+          </button>
+          <button onclick="loadSampleData()" class="btn-sm-action btn-sm-action-outline">
+            <span class="material-icons-round">science</span> Load Sample
+          </button>
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('manual_entry') }}" id="manualForm">
+        <input type="hidden" name="rows_json" id="rowsJson">
+        <div class="form-group-custom mb-4">
+          <label>Analysis Title</label>
+          <div class="input-icon-wrap">
+            <span class="material-icons-round input-icon">title</span>
+            <input type="text" name="title" class="form-control custom-input" placeholder="e.g. Monthly Sales Data" required>
+          </div>
+        </div>
+
+        <div class="table-responsive manual-table-wrap">
+          <table class="table manual-table" id="manualTable">
+            <thead id="tableHead">
+              <tr id="headerRow"></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="d-flex gap-3 mt-4">
+          <button type="submit" class="btn-primary-custom" id="analyzeBtn">
+            <span class="material-icons-round">auto_awesome</span>
+            Analyze with AI
+          </button>
+          <button type="button" onclick="clearTable()" class="btn-outline-custom">
+            <span class="material-icons-round">delete_sweep</span>
+            Clear All
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay d-none" id="loadingOverlay">
+  <div class="loading-card">
+    <div class="ai-spinner"></div>
+    <h3>AI is analyzing your data…</h3>
+    <p>Processing manual entries</p>
+    <div class="loading-steps">
+      <div class="load-step active" id="ls1"><span class="material-icons-round">edit_note</span> Reading entries</div>
+      <div class="load-step" id="ls2"><span class="material-icons-round">analytics</span> Computing statistics</div>
+      <div class="load-step" id="ls3"><span class="material-icons-round">psychology</span> Generating AI insights</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let columns = ['Category', 'Value', 'Month'];
+let rows = [
+  ['Product A', 1200, 'January'],
+  ['Product B', 850, 'January'],
+  ['Product C', 2100, 'February'],
+  ['Product D', 675, 'February'],
+  ['Product E', 3200, 'March'],
+];
+
+function renderTable() {
+  const head = document.getElementById('headerRow');
+  const body = document.getElementById('tableBody');
+  head.innerHTML = '';
+  columns.forEach((col, ci) => {
+    const th = document.createElement('th');
+    th.innerHTML = `<input type="text" class="col-input" value="${col}" onchange="renameCol(${ci}, this.value)">
+      <button class="col-del" onclick="deleteCol(${ci})" title="Delete column">✕</button>`;
+    head.appendChild(th);
+  });
+  head.innerHTML += '<th style="width:40px"></th>';
+
+  body.innerHTML = '';
+  rows.forEach((row, ri) => {
+    const tr = document.createElement('tr');
+    columns.forEach((_, ci) => {
+      const td = document.createElement('td');
+      td.innerHTML = `<input type="text" class="cell-input" value="${row[ci] !== undefined ? row[ci] : ''}" onchange="setCellValue(${ri}, ${ci}, this.value)">`;
+      tr.appendChild(td);
+    });
+    const del = document.createElement('td');
+    del.innerHTML = `<button class="row-del" onclick="deleteRow(${ri})" title="Delete row">✕</button>`;
+    tr.appendChild(del);
+    body.appendChild(tr);
+  });
+}
+
+function renameCol(ci, val) { columns[ci] = val; }
+function deleteCol(ci) { columns.splice(ci, 1); rows.forEach(r => r.splice(ci, 1)); renderTable(); }
+function deleteRow(ri) { rows.splice(ri, 1); renderTable(); }
+function setCellValue(ri, ci, val) { rows[ri][ci] = val; }
+function addRow() { rows.push(new Array(columns.length).fill('')); renderTable(); }
+function addColumn() {
+  const name = prompt('Column name:', 'New Column');
+  if (name) { columns.push(name); rows.forEach(r => r.push('')); renderTable(); }
+}
+function clearTable() { rows = [new Array(columns.length).fill('')]; renderTable(); }
+
+function loadSampleData() {
+  columns = ['Product', 'Revenue', 'Units Sold', 'Region', 'Quarter'];
+  rows = [
+    ['Widget Pro', 45200, 320, 'North', 'Q1'],
+    ['Widget Basic', 28400, 410, 'South', 'Q1'],
+    ['Gadget X', 67800, 198, 'East', 'Q2'],
+    ['Gadget Y', 12300, 87, 'West', 'Q2'],
+    ['Widget Pro', 52100, 375, 'North', 'Q2'],
+    ['Gadget Z', 89400, 254, 'East', 'Q3'],
+    ['Widget Basic', 31200, 468, 'South', 'Q3'],
+    ['Gadget X', 73500, 210, 'West', 'Q3'],
+  ];
+  renderTable();
+}
+
+document.getElementById('manualForm').addEventListener('submit', e => {
+  // Sync latest cell values
+  document.querySelectorAll('#tableBody tr').forEach((tr, ri) => {
+    tr.querySelectorAll('.cell-input').forEach((inp, ci) => {
+      if (rows[ri]) rows[ri][ci] = inp.value;
+    });
+  });
+  document.querySelectorAll('#headerRow .col-input').forEach((inp, ci) => { columns[ci] = inp.value; });
+  const data = rows.map(row => {
+    const obj = {};
+    columns.forEach((col, ci) => { obj[col] = row[ci] !== undefined ? row[ci] : ''; });
+    return obj;
+  }).filter(obj => Object.values(obj).some(v => v !== ''));
+  if (!data.length) { e.preventDefault(); alert('Please enter at least one row of data.'); return; }
+  document.getElementById('rowsJson').value = JSON.stringify(data);
+  document.getElementById('loadingOverlay').classList.remove('d-none');
+  document.getElementById('analyzeBtn').disabled = true;
+});
+
+renderTable();
+</script>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% block title %}InsightAI — AI Decision Intelligence Platform{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+
+{% block public_content %}
+<!-- Navbar -->
+<nav class="landing-nav">
+  <div class="nav-logo">
+    <span class="material-icons-round">analytics</span>
+    <span>InsightAI</span>
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="{{ url_for('login') }}" class="btn-nav-outline">Login</a>
+    <a href="{{ url_for('register') }}" class="btn-nav-fill">Get Started Free</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-section">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-glow hero-glow-1"></div>
+  <div class="hero-glow hero-glow-2"></div>
+  <div class="container hero-container">
+    <div class="hero-badge">
+      <span class="material-icons-round" style="font-size:14px">auto_awesome</span>
+      Powered by Google Gemini AI
+    </div>
+    <h1 class="hero-title">
+      Turn Your Data into<br>
+      <span class="gradient-text">Intelligent Decisions</span>
+    </h1>
+    <p class="hero-subtitle">
+      InsightAI analyzes your CSV, Excel, or manually entered data using advanced AI —
+      detecting trends, risks, and opportunities in seconds. Make faster, smarter decisions with confidence.
+    </p>
+    <div class="hero-actions">
+      <a href="{{ url_for('register') }}" class="btn-hero-primary">
+        <span class="material-icons-round">rocket_launch</span>
+        Start Free Analysis
+      </a>
+      <a href="#how-it-works" class="btn-hero-secondary">
+        <span class="material-icons-round">play_circle</span>
+        See How It Works
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="stat-num">98%</span>
+        <span class="stat-label">Analysis Accuracy</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="stat-num">&lt;10s</span>
+        <span class="stat-label">AI Processing Time</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="stat-num">6+</span>
+        <span class="stat-label">AI Insight Types</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features-section" id="features">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Features</div>
+      <h2 class="section-title">Everything you need to make <span class="gradient-text">smarter decisions</span></h2>
+      <p class="section-subtitle">InsightAI combines cutting-edge AI with intuitive design to give your data a voice.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon-wrap" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB)">
+          <span class="material-icons-round" style="color:#1976D2">upload_file</span>
+        </div>
+        <h3>Multi-Source Data Ingestion</h3>
+        <p>Upload CSV and Excel files or enter data manually via an interactive spreadsheet editor. Handles datasets up to 16 MB.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-wrap" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9)">
+          <span class="material-icons-round" style="color:#388E3C">psychology</span>
+        </div>
+        <h3>AI-Powered Analysis</h3>
+        <p>Google Gemini AI reads your data and delivers an executive summary, key trends, risks, and opportunities — all in plain language.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-wrap" style="background:linear-gradient(135deg,#FFF3E0,#FFE0B2)">
+          <span class="material-icons-round" style="color:#E65100">warning_amber</span>
+        </div>
+        <h3>Risk & Anomaly Detection</h3>
+        <p>Statistical algorithms pinpoint outliers, flag anomaly clusters, and assign a risk level so you never miss a red flag.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-wrap" style="background:linear-gradient(135deg,#F3E5F5,#E1BEE7)">
+          <span class="material-icons-round" style="color:#7B1FA2">trending_up</span>
+        </div>
+        <h3>Trend & Predictive Insights</h3>
+        <p>Identify growth patterns, seasonal cycles, and correlations. Get AI predictions for your most important metrics.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-wrap" style="background:linear-gradient(135deg,#FCE4EC,#F8BBD0)">
+          <span class="material-icons-round" style="color:#C62828">bar_chart</span>
+        </div>
+        <h3>Interactive Charts</h3>
+        <p>Auto-generated bar, line, pie, and scatter charts powered by Chart.js — responsive, animated, and ready to explore.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-wrap" style="background:linear-gradient(135deg,#E0F2F1,#B2DFDB)">
+          <span class="material-icons-round" style="color:#00695C">picture_as_pdf</span>
+        </div>
+        <h3>Downloadable PDF Reports</h3>
+        <p>Generate a polished professional report with one click — complete with AI insights, risk tables, and recommended actions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section" id="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Process</div>
+      <h2 class="section-title">From data to decisions in <span class="gradient-text">three steps</span></h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-icon"><span class="material-icons-round">cloud_upload</span></div>
+        <h3>Upload or Enter Data</h3>
+        <p>Drop a CSV, Excel file, or use the manual entry grid. No data science skills required.</p>
+      </div>
+      <div class="step-connector"><span class="material-icons-round">arrow_forward</span></div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon"><span class="material-icons-round">auto_awesome</span></div>
+        <h3>AI Analyzes Instantly</h3>
+        <p>Gemini AI scans every row and column, computing statistics and generating human-readable insights.</p>
+      </div>
+      <div class="step-connector"><span class="material-icons-round">arrow_forward</span></div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon"><span class="material-icons-round">insights</span></div>
+        <h3>Act on AI Insights</h3>
+        <p>Review your dashboard, explore interactive charts, and download a PDF report to share with your team.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI Output Preview -->
+<section class="preview-section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">AI Output</div>
+      <h2 class="section-title">What InsightAI delivers for <span class="gradient-text">every analysis</span></h2>
+    </div>
+    <div class="output-grid">
+      <div class="output-item">
+        <span class="material-icons-round output-icon" style="color:#1976D2">summarize</span>
+        <div>
+          <strong>Executive Summary</strong>
+          <p>A clear narrative explaining the most critical finding in your data.</p>
+        </div>
+      </div>
+      <div class="output-item">
+        <span class="material-icons-round output-icon" style="color:#388E3C">trending_up</span>
+        <div>
+          <strong>Key Trends</strong>
+          <p>Top patterns, growth signals, and seasonal behaviors detected.</p>
+        </div>
+      </div>
+      <div class="output-item">
+        <span class="material-icons-round output-icon" style="color:#F57C00">warning</span>
+        <div>
+          <strong>Risk Level + Details</strong>
+          <p>Low / Medium / High / Critical classification with a written explanation.</p>
+        </div>
+      </div>
+      <div class="output-item">
+        <span class="material-icons-round output-icon" style="color:#7B1FA2">lightbulb</span>
+        <div>
+          <strong>Opportunities</strong>
+          <p>Actionable growth opportunities identified from the data patterns.</p>
+        </div>
+      </div>
+      <div class="output-item">
+        <span class="material-icons-round output-icon" style="color:#C62828">task_alt</span>
+        <div>
+          <strong>Recommended Actions</strong>
+          <p>Prioritized next steps with expected impact for each action.</p>
+        </div>
+      </div>
+      <div class="output-item">
+        <span class="material-icons-round output-icon" style="color:#00695C">speed</span>
+        <div>
+          <strong>Confidence + Decision Score</strong>
+          <p>AI confidence rating and an overall decision-readiness score out of 100.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container text-center">
+    <h2 class="cta-title">Ready to make smarter decisions?</h2>
+    <p class="cta-sub">Join InsightAI today. Your first analysis is free — no credit card required.</p>
+    <a href="{{ url_for('register') }}" class="btn-hero-primary" style="font-size:1.1rem;padding:14px 36px">
+      <span class="material-icons-round">rocket_launch</span>
+      Get Started — It's Free
+    </a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="landing-footer">
+  <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="footer-brand">
+      <span class="material-icons-round">analytics</span>
+      <span>InsightAI</span>
+    </div>
+    <span class="footer-copy">© 2024 InsightAI · Built with Google Gemini AI</span>
+  </div>
+</footer>
+{% endblock %}

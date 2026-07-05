@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Analysis History{% endblock %}
+{% block page_title %}History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-h1">Analysis History</h1>
+    <p class="page-sub">All your past AI analyses in one place.</p>
+  </div>
+  <a href="{{ url_for('upload') }}" class="btn-primary-custom">
+    <span class="material-icons-round">add</span> New Analysis
+  </a>
+</div>
+
+<div class="card-panel">
+  {% if analyses %}
+  <div class="table-responsive">
+    <table class="table insight-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Source</th>
+          <th>Rows</th>
+          <th>Risk</th>
+          <th>Decision Score</th>
+          <th>Confidence</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in analyses %}
+        <tr>
+          <td>
+            <a href="{{ url_for('analysis', analysis_id=a.id) }}" class="link-title">{{ a.title }}</a>
+            <br><small class="text-muted">{{ a.column_count }} columns</small>
+          </td>
+          <td>
+            <span class="badge-source">
+              <span class="material-icons-round" style="font-size:13px">{{ 'upload_file' if a.data_source == 'upload' else 'edit_note' }}</span>
+              {{ a.data_source.capitalize() }}
+            </span>
+          </td>
+          <td>{{ a.row_count|default(0)|int }}</td>
+          <td><span class="badge-risk badge-{{ a.risk_badge_class() }}">{{ a.risk_level }}</span></td>
+          <td>
+            <div class="score-bar-wrap">
+              <div class="score-bar" style="width:{{ a.decision_score or 0 }}%"></div>
+            </div>
+            <small>{{ "%.1f"|format(a.decision_score or 0) }}</small>
+          </td>
+          <td>
+            <div class="confidence-wrap">
+              <div class="confidence-ring" style="--pct:{{ (a.confidence_score or 0) * 100 | int }}">
+                {{ "%.0f"|format((a.confidence_score or 0) * 100) }}%
+              </div>
+            </div>
+          </td>
+          <td class="text-muted small">{{ a.created_at.strftime('%b %d, %Y') }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('analysis', analysis_id=a.id) }}" class="btn-sm-view">View</a>
+              <a href="{{ url_for('download_report', analysis_id=a.id) }}" class="btn-sm-view" title="Download PDF">
+                <span class="material-icons-round" style="font-size:14px">picture_as_pdf</span>
+              </a>
+              <form method="POST" action="{{ url_for('delete_analysis', analysis_id=a.id) }}"
+                    onsubmit="return confirm('Delete this analysis?')" class="d-inline">
+                <button type="submit" class="btn-sm-del" title="Delete">
+                  <span class="material-icons-round" style="font-size:14px">delete</span>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span class="material-icons-round empty-icon">history</span>
+    <h3>No analyses yet</h3>
+    <p>Upload a dataset or enter data manually to get started.</p>
+    <a href="{{ url_for('upload') }}" class="btn-primary-custom">
+      <span class="material-icons-round">upload_file</span> Upload Your First Dataset
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
