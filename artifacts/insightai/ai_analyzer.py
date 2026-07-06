@@ -75,16 +75,22 @@ def build_chart_data(df: pd.DataFrame) -> dict:
         }
 
     # Line chart: up to 3 numeric cols
+    # Use dropna-per-column then trim all datasets to the shortest one so
+    # labels and every dataset always have the same length (Chart.js requirement).
     if num_cols:
         sample_len = min(20, len(df))
         datasets = []
         for col in num_cols[:3]:
             sample = df[col].dropna().head(sample_len)
             datasets.append({"label": col, "data": [round(float(v), 2) for v in sample]})
-        charts["line"] = {
-            "labels": [str(i + 1) for i in range(sample_len)],
-            "datasets": datasets,
-        }
+        min_len = min(len(d["data"]) for d in datasets) if datasets else 0
+        if min_len > 0:
+            for d in datasets:
+                d["data"] = d["data"][:min_len]
+            charts["line"] = {
+                "labels": [str(i + 1) for i in range(min_len)],
+                "datasets": datasets,
+            }
 
     # Pie chart: first categorical col top 6
     if cat_cols:

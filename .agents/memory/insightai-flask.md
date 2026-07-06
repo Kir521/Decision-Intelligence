@@ -37,6 +37,18 @@ Copied from `public/favicon.svg` → `static/favicon.svg`. Linked via:
 - Session secret: generates a random key at startup if SESSION_SECRET env var absent (SESSION_SECRET is set as a Replit Secret)
 - Open redirect in login: validates `next` starts with `/` and not `//` before redirecting
 
+## Chart rendering — never use fetch() for /api/ routes
+
+**Rule:** Do NOT use `fetch('/api/...')` from InsightAI templates. The Replit proxy routes `/api/*` paths to the Node.js API server artifact (port 8080), not Flask (port 18287). Fetch calls to `/api/dashboard-stats` or `/api/analysis/<id>/chart-data` return an HTML 404 from the Node server, causing `JSON.parse` to throw `"Unexpected token '<'"`.
+
+**Fix applied:** Pass all chart data directly from Flask routes into Jinja templates and inline with `{{ var | tojson }}`. The `/api/...` Flask routes can stay (they're harmless) but must not be called from the frontend.
+
+**Canvas stacking:** Chart.js cannot initialize on a canvas with `display:none` (0×0 dimensions → blank chart). Use `.chart-wrapper { position:relative }` with all canvases `position:absolute; opacity:0` and toggle `.chart-active { opacity:1 }` instead of Bootstrap's `d-none`.
+
+**Line chart length:** `build_chart_data` must trim all line datasets to `min_len` (minimum non-null rows across columns) before building labels, so label count always matches every dataset's data count.
+
+**Dashboard score alignment:** Use `if a.decision_score is not None` (not truthiness) so a 0.0 score isn't dropped, keeping dates[] and scores[] index-aligned.
+
 ## google-generativeai deprecation
 
 `google-generativeai` shows a FutureWarning. Still works. Future migration path: switch to `google.genai` package.

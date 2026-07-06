@@ -187,6 +187,19 @@ def dashboard():
     recommendations = sum(len(a.get_recommended_actions()) for a in analyses)
     avg_decision = round(sum(a.decision_score or 0 for a in analyses) / total, 1) if total else 0
     recent = analyses[:5]
+
+    # Build dashboard chart data inline (avoids AJAX routing issues)
+    risk_dist = {"Low": 0, "Medium": 0, "High": 0, "Critical": 0}
+    scores = []
+    dates = []
+    for a in analyses:
+        risk_dist[a.risk_level] = risk_dist.get(a.risk_level, 0) + 1
+        # Use `is not None` so a legitimate 0.0 score is kept, preserving
+        # date/score index alignment for the line chart.
+        if a.decision_score is not None:
+            scores.append(round(float(a.decision_score), 1))
+            dates.append(a.created_at.strftime("%b %d"))
+
     return render_template(
         "dashboard.html",
         analyses=analyses,
@@ -196,6 +209,9 @@ def dashboard():
         high_risk=high_risk,
         recommendations=recommendations,
         avg_decision=avg_decision,
+        risk_distribution=risk_dist,
+        decision_scores=scores,
+        dates=dates,
     )
 
 
@@ -257,7 +273,7 @@ def manual_entry():
 @login_required
 def analysis(analysis_id):
     a = Analysis.query.filter_by(id=analysis_id, user_id=current_user.id).first_or_404()
-    return render_template("analysis.html", a=a)
+    return render_template("analysis.html", a=a, chart_data=a.get_chart_data())
 
 
 @app.route("/history")

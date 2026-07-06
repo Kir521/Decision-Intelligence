@@ -169,16 +169,18 @@
     <div class="card-panel sticky-charts">
       <div class="card-panel-header"><span class="material-icons-round">bar_chart</span> Data Visualizations</div>
       <div class="chart-tabs">
-        <button class="chart-tab active" onclick="switchChart('bar', this)">Bar</button>
-        <button class="chart-tab" onclick="switchChart('line', this)">Line</button>
-        <button class="chart-tab" onclick="switchChart('pie', this)">Pie</button>
-        <button class="chart-tab" onclick="switchChart('scatter', this)">Scatter</button>
+        <button class="chart-tab active" data-chart="bar"     onclick="switchChart('bar', this)">Bar</button>
+        <button class="chart-tab"        data-chart="line"    onclick="switchChart('line', this)">Line</button>
+        <button class="chart-tab"        data-chart="pie"     onclick="switchChart('pie', this)">Pie</button>
+        <button class="chart-tab"        data-chart="scatter" onclick="switchChart('scatter', this)">Scatter</button>
       </div>
       <div class="chart-container-lg">
-        <canvas id="barChart" class="chart-canvas"></canvas>
-        <canvas id="lineChart" class="chart-canvas d-none"></canvas>
-        <canvas id="pieChart" class="chart-canvas d-none"></canvas>
-        <canvas id="scatterChart" class="chart-canvas d-none"></canvas>
+        <div class="chart-wrapper">
+          <canvas id="barChart"     class="chart-canvas chart-active"></canvas>
+          <canvas id="lineChart"    class="chart-canvas"></canvas>
+          <canvas id="pieChart"     class="chart-canvas"></canvas>
+          <canvas id="scatterChart" class="chart-canvas"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -187,74 +189,177 @@
 
 {% block scripts %}
 <script>
-const CHART_COLORS = ['#1976D2','#388E3C','#F57C00','#7B1FA2','#00695C','#C62828','#0288D1','#558B2F'];
-let charts = {};
+// Chart data inlined by Flask — no fetch() or API call needed.
+var CHART_DATA   = {{ chart_data | tojson }};
+var CHART_COLORS = ['#1976D2','#388E3C','#F57C00','#7B1FA2','#00695C','#C62828','#0288D1','#558B2F'];
+var charts = {};
 
-async function loadCharts() {
-  try {
-    const res = await fetch('/api/analysis/{{ a.id }}/chart-data');
-    const data = await res.json();
+function buildCharts() {
+  var wrapper = document.querySelector('.chart-wrapper');
+  var hasAny = CHART_DATA.bar || CHART_DATA.line || CHART_DATA.pie || CHART_DATA.scatter;
 
-    if (data.bar) {
-      charts.bar = new Chart(document.getElementById('barChart'), {
-        type: 'bar',
-        data: {
-          labels: data.bar.labels,
-          datasets: data.bar.datasets.map((d, i) => ({
-            ...d, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + 'CC',
-            borderColor: CHART_COLORS[i % CHART_COLORS.length], borderWidth: 1, borderRadius: 6
-          }))
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-          scales: { y: { grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
-      });
+  if (!hasAny) {
+    if (wrapper) {
+      wrapper.innerHTML = '<div class="chart-no-data">'
+        + '<span class="material-icons-round">bar_chart</span>'
+        + '<p>No chart data available for this dataset.</p></div>';
     }
-    if (data.line) {
-      charts.line = new Chart(document.getElementById('lineChart'), {
-        type: 'line',
-        data: {
-          labels: data.line.labels,
-          datasets: data.line.datasets.map((d, i) => ({
-            ...d, borderColor: CHART_COLORS[i % CHART_COLORS.length],
+    // Disable all tabs
+    document.querySelectorAll('.chart-tab').forEach(function(b) {
+      b.disabled = true;
+      b.style.opacity = '0.4';
+      b.style.cursor = 'not-allowed';
+    });
+    return;
+  }
+
+  // ── Bar ────────────────────────────────────────────────────────────────
+  if (CHART_DATA.bar) {
+    charts.bar = new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: CHART_DATA.bar.labels,
+        datasets: CHART_DATA.bar.datasets.map(function(d, i) {
+          return Object.assign({}, d, {
+            backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + 'CC',
+            borderColor:     CHART_COLORS[i % CHART_COLORS.length],
+            borderWidth: 1,
+            borderRadius: 6
+          });
+        })
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: CHART_DATA.bar.datasets.length > 1 } },
+        scales: {
+          y: { grid: { color: 'rgba(0,0,0,0.05)' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // ── Line ───────────────────────────────────────────────────────────────
+  if (CHART_DATA.line) {
+    charts.line = new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+      data: {
+        labels: CHART_DATA.line.labels,
+        datasets: CHART_DATA.line.datasets.map(function(d, i) {
+          return Object.assign({}, d, {
+            borderColor:     CHART_COLORS[i % CHART_COLORS.length],
             backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '18',
-            fill: true, tension: 0.4, pointRadius: 4
-          }))
-        },
-        options: { responsive: true, maintainAspectRatio: false,
-          scales: { y: { grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
-      });
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4
+          });
+        })
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { grid: { color: 'rgba(0,0,0,0.05)' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // ── Pie / Doughnut ─────────────────────────────────────────────────────
+  if (CHART_DATA.pie) {
+    charts.pie = new Chart(document.getElementById('pieChart'), {
+      type: 'doughnut',
+      data: {
+        labels: CHART_DATA.pie.labels,
+        datasets: [{
+          data: CHART_DATA.pie.datasets[0].data,
+          backgroundColor: CHART_COLORS,
+          borderWidth: 0,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: { legend: { position: 'bottom', labels: { padding: 16 } } }
+      }
+    });
+  }
+
+  // ── Scatter ────────────────────────────────────────────────────────────
+  if (CHART_DATA.scatter) {
+    charts.scatter = new Chart(document.getElementById('scatterChart'), {
+      type: 'scatter',
+      data: {
+        datasets: CHART_DATA.scatter.datasets.map(function(d, i) {
+          return Object.assign({}, d, {
+            backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '99',
+            pointRadius: 6
+          });
+        })
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { grid: { color: 'rgba(0,0,0,0.05)' } },
+          y: { grid: { color: 'rgba(0,0,0,0.05)' } }
+        }
+      }
+    });
+  }
+
+  // Dim tabs whose chart type has no data
+  document.querySelectorAll('.chart-tab').forEach(function(btn) {
+    var type = btn.getAttribute('data-chart');
+    if (type && !CHART_DATA[type]) {
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.cursor  = 'not-allowed';
     }
-    if (data.pie) {
-      charts.pie = new Chart(document.getElementById('pieChart'), {
-        type: 'doughnut',
-        data: { labels: data.pie.labels, datasets: [{ data: data.pie.datasets[0].data,
-          backgroundColor: CHART_COLORS, borderWidth: 0, hoverOffset: 8 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
-          plugins: { legend: { position: 'bottom', labels: { padding: 16 } } } }
-      });
-    }
-    if (data.scatter) {
-      charts.scatter = new Chart(document.getElementById('scatterChart'), {
-        type: 'scatter',
-        data: { datasets: data.scatter.datasets.map((d, i) => ({
-          ...d, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '99',
-          pointRadius: 6
-        })) },
-        options: { responsive: true, maintainAspectRatio: false,
-          scales: { x: { grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { color: 'rgba(0,0,0,0.05)' } } } }
-      });
-    }
-  } catch(e) { console.error('Chart load error', e); }
+  });
+
+  // Auto-select the first available chart type so the panel is never blank
+  // on load (e.g. datasets with no numeric columns won't have bar/line/scatter).
+  var order = ['bar', 'line', 'pie', 'scatter'];
+  var firstAvailable = order.find(function(t) { return !!CHART_DATA[t]; });
+  if (firstAvailable) {
+    // Deactivate the default bar canvas
+    document.querySelectorAll('.chart-canvas').forEach(function(c) {
+      c.classList.remove('chart-active');
+    });
+    document.querySelectorAll('.chart-tab').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    // Activate the first available canvas and tab
+    var activeCanvas = document.getElementById(firstAvailable + 'Chart');
+    if (activeCanvas) activeCanvas.classList.add('chart-active');
+    var activeTab = document.querySelector('[data-chart="' + firstAvailable + '"]');
+    if (activeTab) activeTab.classList.add('active');
+    if (charts[firstAvailable]) charts[firstAvailable].resize();
+  }
 }
 
 function switchChart(type, btn) {
-  document.querySelectorAll('.chart-canvas').forEach(c => c.classList.add('d-none'));
-  document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
-  const canvas = document.getElementById(type + 'Chart');
-  if (canvas) canvas.classList.remove('d-none');
+  if (btn.disabled) return;
+  document.querySelectorAll('.chart-canvas').forEach(function(c) {
+    c.classList.remove('chart-active');
+  });
+  document.querySelectorAll('.chart-tab').forEach(function(b) {
+    b.classList.remove('active');
+  });
+  var canvas = document.getElementById(type + 'Chart');
+  if (canvas) {
+    canvas.classList.add('chart-active');
+    // Trigger a resize so Chart.js re-measures after the visibility change
+    if (charts[type]) { charts[type].resize(); }
+  }
   btn.classList.add('active');
 }
 
-loadCharts();
+document.addEventListener('DOMContentLoaded', buildCharts);
 </script>
 {% endblock %}

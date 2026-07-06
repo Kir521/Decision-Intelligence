@@ -152,63 +152,79 @@
 
 {% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    const res = await fetch('/api/dashboard-stats');
-    const data = await res.json();
-    if (data.total === 0) return;
+document.addEventListener('DOMContentLoaded', function() {
+  // Data is inlined by Flask — no fetch() needed.
+  var riskDist      = {{ risk_distribution | tojson }};
+  var decisionScores = {{ decision_scores | tojson }};
+  var dates          = {{ dates | tojson }};
 
-    // Risk pie
-    const riskCtx = document.getElementById('riskChart');
-    if (riskCtx) {
+  var total = decisionScores.length + Object.values(riskDist).reduce(function(a,b){return a+b;},0);
+  if (total === 0) return;
+
+  // ── Risk Distribution doughnut ──────────────────────────────────────────
+  var riskCtx = document.getElementById('riskChart');
+  if (riskCtx) {
+    // Filter out zero-value segments so the chart isn't cluttered
+    var riskLabels = [];
+    var riskValues = [];
+    var riskColors = { Low:'#4CAF50', Medium:'#FF9800', High:'#f44336', Critical:'#B71C1C' };
+    var riskBg = [];
+    Object.keys(riskDist).forEach(function(k) {
+      if (riskDist[k] > 0) {
+        riskLabels.push(k);
+        riskValues.push(riskDist[k]);
+        riskBg.push(riskColors[k] || '#9E9E9E');
+      }
+    });
+    if (riskValues.length) {
       new Chart(riskCtx, {
         type: 'doughnut',
         data: {
-          labels: Object.keys(data.risk_distribution),
-          datasets: [{
-            data: Object.values(data.risk_distribution),
-            backgroundColor: ['#4CAF50','#FF9800','#f44336','#B71C1C'],
-            borderWidth: 0,
-            hoverOffset: 8
-          }]
+          labels: riskLabels,
+          datasets: [{ data: riskValues, backgroundColor: riskBg, borderWidth: 0, hoverOffset: 8 }]
         },
         options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter' } } } },
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter' } } }
+          },
           cutout: '65%'
         }
       });
     }
+  }
 
-    // Score line
-    const scoreCtx = document.getElementById('scoreChart');
-    if (scoreCtx && data.decision_scores.length) {
-      new Chart(scoreCtx, {
-        type: 'line',
-        data: {
-          labels: data.dates.slice(-data.decision_scores.length),
-          datasets: [{
-            label: 'Decision Score',
-            data: data.decision_scores,
-            borderColor: '#1976D2',
-            backgroundColor: 'rgba(25,118,210,0.08)',
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: '#1976D2',
-            pointRadius: 5
-          }]
+  // ── Decision Scores Over Time line ──────────────────────────────────────
+  var scoreCtx = document.getElementById('scoreChart');
+  if (scoreCtx && decisionScores.length) {
+    var scoreLabels = dates.slice(-decisionScores.length);
+    new Chart(scoreCtx, {
+      type: 'line',
+      data: {
+        labels: scoreLabels,
+        datasets: [{
+          label: 'Decision Score',
+          data: decisionScores,
+          borderColor: '#1976D2',
+          backgroundColor: 'rgba(25,118,210,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#1976D2',
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
+          x: { grid: { display: false } }
         },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: {
-            y: { min: 0, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } },
-            x: { grid: { display: false } }
-          },
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
-  } catch(e) { console.error(e); }
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
 });
 </script>
 {% endblock %}
