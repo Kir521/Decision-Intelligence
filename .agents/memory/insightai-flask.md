@@ -37,6 +37,30 @@ Copied from `public/favicon.svg` → `static/favicon.svg`. Linked via:
 - Session secret: generates a random key at startup if SESSION_SECRET env var absent (SESSION_SECRET is set as a Replit Secret)
 - Open redirect in login: validates `next` starts with `/` and not `//` before redirecting
 
+## Analysis is fully deterministic — no random() anywhere
+
+`_demo_analysis()` in `ai_analyzer.py` derives every output value from the dataset's own statistics. No `random.*` calls remain. Key formulas:
+- **Decision Score** (40–95): `completeness×40 + (1–min(CV,2)/2)×35 + (1–outlier_ratio×10)×25`
+- **Confidence** (0.60–0.97): `completeness×0.78 + min(rows/1000,1)×0.13 + min(cols/10,1)×0.07`
+- **Risk Level**: `High` if outlier_ratio>0.10 or missing>20%; `Medium` if >0.04/5%; else `Low`
+- **Growth %**: mean of last-third minus mean of first-third of numeric columns
+- **Anomalies**: real z-score detection (|z|>2.5σ), sorted by deviation magnitude
+- **Trend direction**: `numpy.polyfit` slope sign on numeric columns
+
+**Why:** Same CSV must always produce identical Decision Score, Risk Level, Confidence, Recommendations, Insights.
+
+## Login notification email — email_service.py
+
+`email_service.send_login_notification(email, username, ip, ua)` fires a daemon thread, never blocks login. Config via env vars: `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`. HTML + plain-text, sent only on successful login (caller's responsibility).
+
+**Security rules (enforced in `_send`):**
+- `_safe_ip()` validates IP with regex `[\da-fA-F:.]{1,45}` before use — rejects arbitrary strings
+- `_sanitize_display()` strips control chars from username/UA before display
+- `_strip_crlf()` applied to username, to_email, smtp_from — prevents header injection
+- `_build_html()` calls `html.escape()` on ALL dynamic fields (username, ip, browser_device, location, formatted_time)
+
+**Why:** ip and User-Agent are attacker-controlled request headers; username is user-supplied at registration.
+
 ## Chart rendering — never use fetch() for /api/ routes
 
 **Rule:** Do NOT use `fetch('/api/...')` from InsightAI templates. The Replit proxy routes `/api/*` paths to the Node.js API server artifact (port 8080), not Flask (port 18287). Fetch calls to `/api/dashboard-stats` or `/api/analysis/<id>/chart-data` return an HTML 404 from the Node server, causing `JSON.parse` to throw `"Unexpected token '<'"`.

@@ -18,6 +18,7 @@ load_dotenv()
 
 from models import db, User, Analysis
 import ai_analyzer
+import email_service
 
 # ─── App setup ────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -158,6 +159,16 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password_hash, password):
             login_user(user, remember=True)
+            # Send login notification email asynchronously (never blocks login)
+            try:
+                raw_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
+                client_ip = raw_ip.split(",")[0].strip() if "," in raw_ip else raw_ip
+                user_agent = request.headers.get("User-Agent", "")
+                email_service.send_login_notification(
+                    user.email, user.username, client_ip, user_agent
+                )
+            except Exception:
+                pass  # email errors must never prevent login
             next_page = request.args.get("next")
             flash(f"Welcome back, {user.username}!", "success")
             # Validate next_page to prevent open-redirect attacks
